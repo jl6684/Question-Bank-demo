@@ -246,25 +246,6 @@ The system uses a 4-level hierarchy:
 - **Metadata Display**: See question details (Subject, Year, Topic, Difficulty)
 - **Mark Scheme Integration**: Seamlessly switch between questions and answers
 
-## 🌐 Deployment Options
-
-### 1. Local File (Simplest)
-Just open `index.html` in any web browser. Perfect for offline use.
-
-### 2. GitHub Pages
-1. Fork/upload this repository to GitHub
-2. Enable GitHub Pages in repository settings
-3. Access via `https://yourusername.github.io/question-bank`
-
-### 3. Netlify
-1. Drag and drop the folder to [netlify.com](https://netlify.com)
-2. Get instant hosting with custom domain options
-
-### 4. Traditional Web Hosting
-Upload all files to any web hosting service that supports static files.
-
-### 5. Local Web Server
-For development or local network access:
 
 **Python:**
 ```bash
@@ -446,3 +427,4 @@ This project is open source and available under the [MIT License](LICENSE).
 **Happy Learning! 📚✨**
 
 *This enhanced question bank system supports comprehensive academic content management with professional printing capabilities.*
+
