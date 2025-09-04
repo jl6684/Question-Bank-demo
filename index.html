@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Bank</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Question Bank</h1>
+            <p>Navigate through questions with ease</p>
+        </header>
+
+        <nav class="controls">
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label for="subject">Subject:</label>
+                    <select id="subject">
+                        <option value="">All Subjects</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="year">Year:</label>
+                    <select id="year">
+                        <option value="">All Years</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="topic">Topic:</label>
+                    <select id="topic">
+                        <option value="">All Topics</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="difficulty">Difficulty:</label>
+                    <select id="difficulty">
+                        <option value="">All Difficulties</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="selection-tools">
+                <button id="selectAllBtn" class="select-btn">Select All</button>
+                <button id="clearSelectionBtn" class="select-btn">Clear All</button>
+                <span id="selectedCount">0 selected</span>
+                <button id="printSelectedBtn" class="print-btn">🖨️ Print Selected</button>
+            </div>
+        </nav>
+
+        <main class="question-area">
+            <div id="loadingMessage" class="message">
+                Loading questions...
+            </div>
+            
+            <div id="errorMessage" class="message error" style="display: none;">
+                No questions found. Please add question images to the /questions folder.
+            </div>
+
+            <!-- Continuous View (Default) -->
+            <div id="continuousQuestionsContainer" class="continuous-container">
+                <div class="continuous-header">
+                    <h2>📋 All Questions</h2>
+                    <div class="continuous-controls">
+                        <button id="selectAllVisibleBtn" class="select-btn">Select All Visible</button>
+                        <button id="clearAllVisibleBtn" class="select-btn">Clear All Visible</button>
+                        <span id="continuousCounter">0 questions</span>
+                    </div>
+                </div>
+                <div id="continuousQuestionsList" class="continuous-list">
+                    <!-- Questions will be populated here -->
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="stats">
+                <span>Total Questions: <span id="totalQuestions">0</span></span>
+                <span>Filtered: <span id="filteredCount">0</span></span>
+                <span>Selected: <span id="selectedQuestions">0</span></span>
+                <span>Current: <span id="currentQuestion">0</span></span>
+            </div>
+            <div class="instructions">
+                <p>💡 <strong>Tips:</strong> Use arrow keys for navigation • Space for random • Click images for fullscreen</p>
+                <p>📁 <strong>Structure:</strong> /questions/Subject/Year/Topic/Difficulty/ and /mark-schemes/Subject/Year/Topic/Difficulty/</p>
+                <p>�️ <strong>Printing:</strong> Select questions and click "Print Selected" to generate a printable document</p>
+            </div>
+        </footer>
+
+    <!-- Print Modal -->
+    <div id="printModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖨️ Print Questions</h2>
+                <span class="close" id="closePrintModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="print-options">
+                    <label>
+                        <input type="radio" name="printType" value="questions" checked>
+                        Questions Only
+                    </label>
+                    <label>
+                        <input type="radio" name="printType" value="markschemes">
+                        Mark Schemes Only
+                    </label>
+                    <label>
+                        <input type="radio" name="printType" value="both">
+                        Questions + Mark Schemes
+                    </label>
+                </div>
+                <div class="print-layout">
+                    <label>
+                        <input type="checkbox" id="includeMetadata" checked>
+                        Include question metadata (Subject, Year, Topic, Difficulty)
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button id="generatePrintBtn" class="action-btn">Generate Print Document</button>
+                    <button id="cancelPrintBtn" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Image Modal for Continuous View -->
+    <div id="imageModal" class="modal" style="display: none;">
+        <div class="modal-content image-modal-content">
+            <span class="close" onclick="questionBank.closeImageModal()">&times;</span>
+            <img id="modalImage" src="" alt="Question Image" style="display: none;">
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

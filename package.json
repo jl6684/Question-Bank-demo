@@ -1,0 +1,28 @@
+{
+  "name": "question-bank",
+  "version": "1.0.0",
+  "description": "A simple self-hosted question bank website for displaying questions as images",
+  "main": "index.html",
+  "scripts": {
+    "start": "python server.py",
+    "serve": "python -m http.server 8000",
+    "dev": "python server.py 3000"
+  },
+  "keywords": [
+    "education",
+    "questions",
+    "quiz",
+    "study",
+    "self-hosted",
+    "static-site"
+  ],
+  "author": "",
+  "license": "MIT",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
