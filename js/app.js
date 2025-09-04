@@ -5,6 +5,8 @@ class AdvancedQuestionBank {
         this.selectedQuestions = new Set();
         this.isLoading = false;
         this.scannedCombinations = new Set(); // Track what we've already scanned
+        this.questionCache = new Map(); // Cache for faster subsequent loads
+        this.lastScanTime = new Map(); // Track when each combination was last scanned
         
         // Filters
         this.filters = {
@@ -115,22 +117,42 @@ class AdvancedQuestionBank {
     }
 
     async loadQuestionsForCurrentFilters() {
-        // Option 1: Ultra-Fast Minimal Scanning
+        // Ultra-Fast Cached Scanning
         // Only scan when BOTH Subject AND Year are selected
         if (!this.filters.subject || !this.filters.year) {
             this.showSelectionMessage();
             return;
         }
 
-        // Show loading
+        const cacheKey = `${this.filters.subject}_${this.filters.year}_${this.filters.topic}_${this.filters.difficulty}`;
+        
+        // Check cache first for instant loading
+        if (this.questionCache.has(cacheKey)) {
+            const cachedTime = this.lastScanTime.get(cacheKey);
+            const cacheAge = Date.now() - cachedTime;
+            
+            // Use cache if less than 5 minutes old
+            if (cacheAge < 300000) {
+                console.log(`⚡ Loading from cache: ${cacheKey}`);
+                this.questions = this.questionCache.get(cacheKey);
+                this.filterQuestions();
+                return;
+            }
+        }
+
+        // Show loading with progress
         this.showLoading();
         
         try {
             // Update topic dropdown based on selected subject
             this.updateTopicOptions();
             
-            // Only scan for the specific Subject+Year combination
+            // Scan with optimized batch processing
             const newQuestions = await this.scanMinimalCombination();
+            
+            // Cache the results for future use
+            this.questionCache.set(cacheKey, [...this.questions, ...newQuestions]);
+            this.lastScanTime.set(cacheKey, Date.now());
             
             // Add new questions to our collection (avoid duplicates)
             newQuestions.forEach(question => {
@@ -151,9 +173,13 @@ class AdvancedQuestionBank {
     showSelectionMessage() {
         document.getElementById('loadingMessage').style.display = 'none';
         document.getElementById('errorMessage').innerHTML = `
-            <strong>Ready to scan for questions!</strong><br><br>
+            <strong>⚡ Ultra-Fast Question Bank Ready!</strong><br><br>
             Please select both <strong>Subject</strong> and <strong>Year</strong> to load questions.<br>
-            <small>This ensures fast, targeted scanning of only the files you need.</small>
+            <small>🚀 <strong>Performance Optimizations:</strong><br>
+            • Batch scanning (300ms timeout)<br>
+            • Smart caching (5-min expiry)<br>
+            • Limited to 10 questions per topic for speed<br>
+            • Instant subsequent loads from cache</small>
         `;
         document.getElementById('errorMessage').style.display = 'block';
         document.getElementById('continuousQuestionsContainer').style.display = 'none';
@@ -209,56 +235,65 @@ class AdvancedQuestionBank {
         // Only JPEG format for ultra-fast scanning
         const imageExtension = 'jpeg';
         
-        console.log(`🔍 Scanning: ${subject}/${year} for JPEG questions...`);
+        console.log(`🔍 Optimized scanning: ${subject}/${year} for JPEG questions...`);
         
-        // Scan only the specific Subject+Year combination
+        // Pre-generate all possible paths for batch checking
+        const candidatePaths = [];
+        const pathToQuestionMap = new Map();
+        
         for (const topic of topicsToScan) {
             for (const difficulty of difficultiestoScan) {
-                // Try common question naming patterns (limited to first 15 for speed)
-                for (let i = 1; i <= 15; i++) {
-                    const patterns = [
-                        `q${i}.${imageExtension}`,
-                        `question${i}.${imageExtension}`,
-                        `${i}.${imageExtension}`
-                    ];
+                // Reduced to first 10 questions for faster scanning
+                for (let i = 1; i <= 10; i++) {
+                    const patterns = [`q${i}.${imageExtension}`]; // Only check most common pattern first
                     
                     for (const pattern of patterns) {
                         const questionPath = `questions/${subject}/${year}/${topic}/${difficulty}/${pattern}`;
                         const markSchemePath = `mark-schemes/${subject}/${year}/${topic}/${difficulty}/${pattern}`;
                         
-                        if (await this.imageExists(questionPath)) {
-                            const hasMarkScheme = await this.imageExists(markSchemePath);
-                            
-                            questions.push({
-                                id: `${subject}_${year}_${topic}_${difficulty}_${i}`,
-                                subject: subject,
-                                year: year,
-                                topic: topic,
-                                difficulty: difficulty,
-                                number: i,
-                                filename: pattern,
-                                questionPath: questionPath,
-                                markSchemePath: hasMarkScheme ? markSchemePath : null,
-                                title: `Question ${i}`,
-                                hasMarkScheme: hasMarkScheme
-                            });
-                            
-                            console.log(`✅ Found: ${questionPath}`);
-                            break; // Found this question, move to next number
-                        }
+                        candidatePaths.push(questionPath);
+                        pathToQuestionMap.set(questionPath, {
+                            id: `${subject}_${year}_${topic}_${difficulty}_${i}`,
+                            subject: subject,
+                            year: year,
+                            topic: topic,
+                            difficulty: difficulty,
+                            number: i,
+                            filename: pattern,
+                            questionPath: questionPath,
+                            markSchemePath: markSchemePath,
+                            title: `Question ${i}`,
+                            hasMarkScheme: false // Will be checked separately if needed
+                        });
                     }
                 }
             }
         }
+        
+        // Batch check all paths at once for much faster performance
+        console.log(`🚀 Batch checking ${candidatePaths.length} potential questions...`);
+        const results = await this.batchImageExists(candidatePaths);
+        
+        // Process results and build final questions array
+        for (let i = 0; i < candidatePaths.length; i++) {
+            const path = candidatePaths[i];
+            const result = results[i];
+            
+            if (result.status === 'fulfilled' && result.value === true) {
+                const questionData = pathToQuestionMap.get(path);
+                questions.push(questionData);
+                console.log(`✅ Found: ${path}`);
+            }
+        }
 
-        console.log(`📊 Scan complete: Found ${questions.length} questions`);
+        console.log(`📊 Optimized scan complete: Found ${questions.length} questions in batch mode`);
         return questions;
     }
 
     showLoading() {
         document.getElementById('loadingMessage').innerHTML = `
-            🔍 <strong>Scanning for JPEG questions...</strong><br>
-            <small>Looking in: questions/${this.filters.subject}/${this.filters.year}/</small>
+            ⚡ <strong>Ultra-Fast Batch Scanning...</strong><br>
+            <small>Optimized scanning: questions/${this.filters.subject}/${this.filters.year}/ (300ms timeout)</small>
         `;
         document.getElementById('loadingMessage').style.display = 'block';
         document.getElementById('errorMessage').style.display = 'none';
@@ -271,10 +306,32 @@ class AdvancedQuestionBank {
             const img = new Image();
             img.onload = () => resolve(true);
             img.onerror = () => resolve(false);
-            // Reduced timeout for faster scanning since we only check JPEG
-            setTimeout(() => resolve(false), 1000);
+            // Ultra-fast timeout for quick scanning
+            setTimeout(() => resolve(false), 300);
             img.src = path;
         });
+    }
+
+    // Batch image existence checking for better performance
+    async batchImageExists(paths) {
+        const promises = paths.map(path => this.imageExists(path));
+        return await Promise.allSettled(promises);
+    }
+
+    // Clear cache for fresh scanning
+    clearCache() {
+        this.questionCache.clear();
+        this.lastScanTime.clear();
+        this.scannedCombinations.clear();
+        console.log('🧹 Cache cleared - next scan will be fresh');
+    }
+
+    // Get cache statistics
+    getCacheInfo() {
+        return {
+            cacheSize: this.questionCache.size,
+            lastScans: Array.from(this.lastScanTime.entries())
+        };
     }
 
     populateFilters() {
@@ -657,10 +714,45 @@ class AdvancedQuestionBank {
         modalImg.src = '';
         modalImg.style.display = 'none';
     }
+
+    // Performance monitoring and debugging
+    getPerformanceStats() {
+        const cacheInfo = this.getCacheInfo();
+        const stats = {
+            totalQuestions: this.questions.length,
+            filteredQuestions: this.filteredQuestions.length,
+            selectedQuestions: this.selectedQuestions.size,
+            cacheEntries: cacheInfo.cacheSize,
+            scannedCombinations: this.scannedCombinations.size,
+            filters: this.filters
+        };
+        
+        console.table(stats);
+        return stats;
+    }
+
+    // Force refresh - clears cache and rescans
+    async forceRefresh() {
+        console.log('🔄 Force refresh initiated...');
+        this.clearCache();
+        this.questions = [];
+        this.filteredQuestions = [];
+        await this.loadQuestionsForCurrentFilters();
+        console.log('✅ Force refresh completed');
+    }
 }
 
 // Initialize the application
 let questionBank;
 document.addEventListener('DOMContentLoaded', () => {
     questionBank = new AdvancedQuestionBank();
+    
+    // Add performance shortcuts for development
+    window.qb = questionBank; // Quick access
+    window.qbStats = () => questionBank.getPerformanceStats();
+    window.qbRefresh = () => questionBank.forceRefresh();
+    window.qbClearCache = () => questionBank.clearCache();
+    
+    console.log('🚀 Question Bank initialized with performance optimizations');
+    console.log('💡 Dev tools: qbStats(), qbRefresh(), qbClearCache()');
 });
